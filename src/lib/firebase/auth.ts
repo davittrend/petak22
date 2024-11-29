@@ -3,18 +3,20 @@ import { getFirebaseApp } from './init';
 
 let auth: Auth | undefined;
 
-export function initializeAuth() {
+export async function initializeAuth(): Promise<Auth> {
   if (!auth) {
-    auth = getAuth(getFirebaseApp());
-    setPersistence(auth, browserLocalPersistence)
-      .catch((error) => {
-        console.error('Error setting auth persistence:', error);
-      });
+    try {
+      auth = getAuth(getFirebaseApp());
+      await setPersistence(auth, browserLocalPersistence);
+    } catch (error) {
+      console.error('Error initializing Auth:', error);
+      throw error;
+    }
   }
   return auth;
 }
 
-export function getAuth() {
+export function getAuth(): Auth {
   if (!auth) {
     throw new Error('Auth not initialized');
   }
