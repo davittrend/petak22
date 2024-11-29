@@ -1,36 +1,67 @@
 import { useState, useEffect } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getAuth } from '@/lib/firebase/auth';
 import { useAccountStore } from '@/lib/store';
 
 interface AuthState {
   user: User | null;
   loading: boolean;
+  error: Error | null;
 }
 
 export function useAuth(): AuthState {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     loading: true,
+    error: null,
   });
+
   const initializeStore = useAccountStore((state) => state.initializeStore);
+  const initialized = useAccountStore((state) => state.initialized);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    let unsubscribe: (() => void) | undefined;
+
+    try {
+      const auth = getAuth();
+      
+      unsubscribe = onAuthStateChanged(
+        auth,
+        (user) => {
+          setAuthState({
+            user,
+            loading: false,
+            error: null,
+          });
+
+          if (user && !initialized) {
+            initializeStore(user.uid);
+          }
+        },
+        (error) => {
+          console.error('Auth state change error:', error);
+          setAuthState({
+            user: null,
+            loading: false,
+            error,
+          });
+        }
+      );
+    } catch (error) {
+      console.error('Auth initialization error:', error);
       setAuthState({
-        user,
+        user: null,
         loading: false,
+        error: error instanceof Error ? error : new Error('Failed to initialize auth'),
       });
+    }
 
-      // Initialize store when user is authenticated
-      if (user) {
-        initializeStore(user.uid);
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
       }
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, [initializeStore]);
+    };
+  }, [initializeStore, initialized]);
 
   return authState;
 }
