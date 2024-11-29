@@ -2,8 +2,6 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from '@/layouts/RootLayout';
 import { routes } from '@/routes';
 import { Toaster } from 'sonner';
-import { useEffect } from 'react';
-import { initializeAuth } from '@/lib/firebase';
 
 const router = createBrowserRouter([
   {
@@ -13,11 +11,6 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-  useEffect(() => {
-    // Initialize Firebase Auth
-    initializeAuth();
-  }, []);
-
   return (
     <>
       <RouterProvider router={router} />
