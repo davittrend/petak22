@@ -1,7 +1,30 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider } from 'firebase/auth';
+import { 
+  getAuth, 
+  setPersistence, 
+  browserLocalPersistence, 
+  GoogleAuthProvider,
+  Auth,
+} from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 import { getFirestore } from 'firebase/firestore';
+
+// Validate environment variables
+const requiredEnvVars = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_STORAGE_BUCKET',
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_APP_ID'
+] as const;
+
+// Check if any required environment variables are missing
+requiredEnvVars.forEach(varName => {
+  if (!import.meta.env[varName]) {
+    console.error(`Missing required environment variable: ${varName}`);
+  }
+});
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -16,8 +39,8 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Auth
-const auth = getAuth(app);
+// Initialize Auth with type safety
+const auth: Auth = getAuth(app);
 
 // Initialize Realtime Database
 const database = getDatabase(app);
