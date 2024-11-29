@@ -1,26 +1,16 @@
-import { Auth, getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider } from 'firebase/auth';
 import { app } from './init';
 
-let auth: Auth;
+// Initialize Auth with the app instance
+export const auth = getAuth(app);
 
-export function getFirebaseAuth(): Auth {
-  if (!auth) {
-    auth = getAuth(app);
-    setPersistence(auth, browserLocalPersistence).catch(error => {
-      console.error('Error setting auth persistence:', error);
-    });
-  }
-  return auth;
-}
-
-// Initialize Auth immediately
-auth = getFirebaseAuth();
+// Set persistence to LOCAL
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error('Error setting auth persistence:', error);
+});
 
 // Initialize Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
-
-export { auth };
-export { getAuth };
