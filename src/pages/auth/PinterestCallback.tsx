@@ -23,29 +23,36 @@ export function PinterestCallback() {
 
       try {
         setIsProcessing(true);
+        // Exchange code for token and user data
         const { token, user } = await exchangePinterestCode(code);
         
+        // Create new account object
         const newAccount: PinterestAccount = {
           id: user.username,
           user,
           token,
           lastRefreshed: Date.now(),
         };
-        
-        // First fetch boards to ensure API access works
-        const boards = await fetchPinterestBoards(token.access_token);
-        
-        // Then save account and boards
+
+        // First save the account
         await addAccount(newAccount);
+        
+        // Then fetch and save boards
+        const boards = await fetchPinterestBoards(token.access_token);
         await setBoards(newAccount.id, boards);
         
         toast.success('Pinterest account connected successfully!');
+        
+        // Add a small delay to ensure state updates are processed
+        setTimeout(() => {
+          navigate('/dashboard/accounts');
+        }, 500);
       } catch (error) {
         console.error('Error processing Pinterest callback:', error);
         toast.error('Failed to connect Pinterest account. Please try again.');
+        navigate('/dashboard/accounts');
       } finally {
         setIsProcessing(false);
-        navigate('/dashboard/accounts');
       }
     };
 
