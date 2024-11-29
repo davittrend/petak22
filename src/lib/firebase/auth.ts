@@ -11,7 +11,13 @@ googleProvider.setCustomParameters({
 });
 
 // Set persistence to LOCAL
-setPersistence(auth, browserLocalPersistence)
-  .catch((error) => {
+export const initializeAuth = async () => {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch (error) {
     console.error('Error setting auth persistence:', error);
-  });
+  }
+};
+
+// Initialize auth persistence
+initializeAuth();
