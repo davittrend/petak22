@@ -3,7 +3,8 @@ import {
   getAuth, 
   setPersistence, 
   browserLocalPersistence, 
-  GoogleAuthProvider,
+  GoogleAuthProvider, 
+  initializeAuth as firebaseInitializeAuth,
   Auth,
 } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
@@ -19,7 +20,6 @@ const requiredEnvVars = [
   'VITE_FIREBASE_APP_ID'
 ] as const;
 
-// Check if any required environment variables are missing
 requiredEnvVars.forEach(varName => {
   if (!import.meta.env[varName]) {
     console.error(`Missing required environment variable: ${varName}`);
@@ -39,8 +39,8 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Auth with type safety
-const auth: Auth = getAuth(app);
+// Initialize Auth with `initializeAuth`
+const auth: Auth = firebaseInitializeAuth(app);
 
 // Initialize Realtime Database
 const database = getDatabase(app);
@@ -60,4 +60,4 @@ setPersistence(auth, browserLocalPersistence)
     console.error('Error setting auth persistence:', error);
   });
 
-export { auth, database, firestore, googleProvider };
+export { auth, database, firestore, googleProvider, firebaseInitializeAuth as initializeAuth };
