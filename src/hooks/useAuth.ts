@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { getAuth } from '@/lib/firebase/auth';
+import { getFirebaseAuth } from '@/lib/firebase/auth';
 import { useAccountStore } from '@/lib/store';
 
 interface AuthState {
@@ -23,7 +23,7 @@ export function useAuth(): AuthState {
     let unsubscribe: (() => void) | undefined;
 
     try {
-      const auth = getAuth();
+      const auth = getFirebaseAuth();
       
       unsubscribe = onAuthStateChanged(
         auth,
