@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ref, set, get } from 'firebase/database';
+import { ref, set, get, onValue } from 'firebase/database';
 import { database, auth } from './firebase';
 import type { PinterestAccount, PinterestBoard } from '@/types/pinterest';
 
@@ -13,6 +13,7 @@ interface AccountStore {
   setSelectedAccount: (accountId: string) => void;
   setBoards: (accountId: string, boards: PinterestBoard[]) => Promise<void>;
   getAccount: (accountId: string) => PinterestAccount | undefined;
+  initializeStore: () => void;
 }
 
 export const useAccountStore = create<AccountStore>()(
@@ -22,33 +23,42 @@ export const useAccountStore = create<AccountStore>()(
       selectedAccountId: null,
       boards: {},
 
+      initializeStore: () => {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        // Listen to accounts changes
+        const accountsRef = ref(database, `users/${userId}/accounts`);
+        onValue(accountsRef, (snapshot) => {
+          const accounts: PinterestAccount[] = [];
+          snapshot.forEach((childSnapshot) => {
+            accounts.push({
+              id: childSnapshot.key!,
+              ...childSnapshot.val(),
+            });
+          });
+          set({ accounts });
+        });
+
+        // Listen to boards changes
+        const boardsRef = ref(database, `users/${userId}/boards`);
+        onValue(boardsRef, (snapshot) => {
+          const boards: Record<string, PinterestBoard[]> = {};
+          snapshot.forEach((childSnapshot) => {
+            boards[childSnapshot.key!] = childSnapshot.val();
+          });
+          set({ boards });
+        });
+      },
+
       addAccount: async (account) => {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('User not authenticated');
 
-        // Check if account already exists
-        const existingAccounts = get().accounts || [];
-        const existingAccount = existingAccounts.find(a => a.id === account.id);
+        // Save to Firebase
+        await set(ref(database, `users/${userId}/accounts/${account.id}`), account);
         
-        if (existingAccount) {
-          // Update existing account
-          const updatedAccounts = existingAccounts.map(a => 
-            a.id === account.id ? { ...a, ...account } : a
-          );
-
-          // Save to Firebase
-          await set(ref(database, `users/${userId}/accounts/${account.id}`), account);
-          
-          set({ accounts: updatedAccounts });
-        } else {
-          // Add new account
-          await set(ref(database, `users/${userId}/accounts/${account.id}`), account);
-          
-          set((state) => ({
-            accounts: [...(state.accounts || []), account],
-            selectedAccountId: state.selectedAccountId || account.id,
-          }));
-        }
+        // Local state will be updated by the onValue listener
       },
 
       removeAccount: async (accountId) => {
@@ -59,20 +69,13 @@ export const useAccountStore = create<AccountStore>()(
         await set(ref(database, `users/${userId}/accounts/${accountId}`), null);
         await set(ref(database, `users/${userId}/boards/${accountId}`), null);
         
-        set((state) => {
-          const remainingAccounts = (state.accounts || []).filter(a => a.id !== accountId);
-          return {
-            accounts: remainingAccounts,
-            selectedAccountId:
-              state.selectedAccountId === accountId
-                ? remainingAccounts[0]?.id || null
-                : state.selectedAccountId,
-            boards: {
-              ...(state.boards || {}),
-              [accountId]: undefined,
-            },
-          };
-        });
+        // Update selected account if needed
+        set((state) => ({
+          selectedAccountId:
+            state.selectedAccountId === accountId
+              ? state.accounts.find(a => a.id !== accountId)?.id || null
+              : state.selectedAccountId,
+        }));
       },
 
       setSelectedAccount: (accountId) => set({ selectedAccountId: accountId }),
@@ -84,12 +87,7 @@ export const useAccountStore = create<AccountStore>()(
         // Save to Firebase
         await set(ref(database, `users/${userId}/boards/${accountId}`), boards);
         
-        set((state) => ({
-          boards: {
-            ...(state.boards || {}),
-            [accountId]: boards,
-          },
-        }));
+        // Local state will be updated by the onValue listener
       },
 
       getAccount: (accountId) => {
