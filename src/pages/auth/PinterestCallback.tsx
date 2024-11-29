@@ -1,19 +1,32 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { exchangePinterestCode, fetchPinterestBoards } from '@/lib/pinterest';
-import { useAccountStore } from '@/lib/store';
-import type { PinterestAccount } from '@/types/pinterest';
+import { connectPinterestAccount } from '@/lib/pinterest';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 export function PinterestCallback() {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(true);
-  const { addAccount, setBoards } = useAccountStore();
+  const { user } = useAuth();
 
   useEffect(() => {
     const processCallback = async () => {
+      // Ensure user is authenticated
+      if (!user) {
+        toast.error('Please sign in first');
+        navigate('/signin');
+        return;
+      }
+
       const searchParams = new URLSearchParams(window.location.search);
       const code = searchParams.get('code');
+      const error = searchParams.get('error');
+
+      if (error) {
+        toast.error(`Pinterest authorization failed: ${error}`);
+        navigate('/dashboard/accounts');
+        return;
+      }
 
       if (!code) {
         toast.error('Invalid callback URL');
@@ -23,30 +36,9 @@ export function PinterestCallback() {
 
       try {
         setIsProcessing(true);
-        // Exchange code for token and user data
-        const { token, user } = await exchangePinterestCode(code);
-        
-        // Create new account object
-        const newAccount: PinterestAccount = {
-          id: user.username,
-          user,
-          token,
-          lastRefreshed: Date.now(),
-        };
-
-        // First save the account
-        await addAccount(newAccount);
-        
-        // Then fetch and save boards
-        const boards = await fetchPinterestBoards(token.access_token);
-        await setBoards(newAccount.id, boards);
-        
+        await connectPinterestAccount(code);
         toast.success('Pinterest account connected successfully!');
-        
-        // Add a small delay to ensure state updates are processed
-        setTimeout(() => {
-          navigate('/dashboard/accounts');
-        }, 500);
+        navigate('/dashboard/accounts');
       } catch (error) {
         console.error('Error processing Pinterest callback:', error);
         toast.error('Failed to connect Pinterest account. Please try again.');
@@ -57,7 +49,7 @@ export function PinterestCallback() {
     };
 
     processCallback();
-  }, []);
+  }, [navigate, user]);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
