@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { getPinterestAuthUrl, fetchPinterestBoards } from '@/lib/pinterest';
 import { useAccountStore } from '@/lib/store';
@@ -8,7 +8,19 @@ import { Trash2, RefreshCw } from 'lucide-react';
 export function Accounts() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { accounts, selectedAccountId, boards, removeAccount, setSelectedAccount, setBoards } = useAccountStore();
+  const { 
+    accounts, 
+    selectedAccountId, 
+    boards, 
+    removeAccount, 
+    setSelectedAccount, 
+    setBoards,
+    initializeStore 
+  } = useAccountStore();
+
+  useEffect(() => {
+    initializeStore();
+  }, []);
 
   const handleConnectPinterest = async () => {
     try {
