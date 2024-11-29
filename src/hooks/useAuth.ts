@@ -1,67 +1,25 @@
 import { useState, useEffect } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { getFirebaseAuth } from '@/lib/firebase/auth';
+import { auth } from '@/lib/firebase';
 import { useAccountStore } from '@/lib/store';
 
-interface AuthState {
-  user: User | null;
-  loading: boolean;
-  error: Error | null;
-}
-
-export function useAuth(): AuthState {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    loading: true,
-    error: null,
-  });
-
+export function useAuth() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const initializeStore = useAccountStore((state) => state.initializeStore);
-  const initialized = useAccountStore((state) => state.initialized);
 
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-
-    try {
-      const auth = getFirebaseAuth();
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
       
-      unsubscribe = onAuthStateChanged(
-        auth,
-        (user) => {
-          setAuthState({
-            user,
-            loading: false,
-            error: null,
-          });
-
-          if (user && !initialized) {
-            initializeStore(user.uid);
-          }
-        },
-        (error) => {
-          console.error('Auth state change error:', error);
-          setAuthState({
-            user: null,
-            loading: false,
-            error,
-          });
-        }
-      );
-    } catch (error) {
-      console.error('Auth initialization error:', error);
-      setAuthState({
-        user: null,
-        loading: false,
-        error: error instanceof Error ? error : new Error('Failed to initialize auth'),
-      });
-    }
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
+      if (currentUser) {
+        initializeStore(currentUser.uid);
       }
-    };
-  }, [initializeStore, initialized]);
+    });
 
-  return authState;
+    return () => unsubscribe();
+  }, [initializeStore]);
+
+  return { user, loading };
 }
