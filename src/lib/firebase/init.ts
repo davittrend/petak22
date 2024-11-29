@@ -3,7 +3,7 @@ import { firebaseConfig } from './config';
 
 let app: FirebaseApp | undefined;
 
-export async function initializeFirebase(): Promise<FirebaseApp> {
+export function initializeFirebase(): FirebaseApp {
   if (!app && !getApps().length) {
     try {
       app = initializeApp(firebaseConfig);
@@ -15,9 +15,11 @@ export async function initializeFirebase(): Promise<FirebaseApp> {
   return app!;
 }
 
-export function getFirebaseApp(): FirebaseApp {
-  if (!app) {
-    throw new Error('Firebase not initialized');
-  }
-  return app;
+// Initialize Firebase immediately
+try {
+  app = initializeFirebase();
+} catch (error) {
+  console.error('Failed to initialize Firebase:', error);
 }
+
+export { app };
