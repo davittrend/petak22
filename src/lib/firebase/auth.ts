@@ -3,15 +3,18 @@ import { app } from './init';
 
 let auth: Auth;
 
-try {
-  auth = getAuth(app);
-  setPersistence(auth, browserLocalPersistence).catch(error => {
-    console.error('Error setting auth persistence:', error);
-  });
-} catch (error) {
-  console.error('Error initializing Auth:', error);
-  throw error;
+export function getFirebaseAuth(): Auth {
+  if (!auth) {
+    auth = getAuth(app);
+    setPersistence(auth, browserLocalPersistence).catch(error => {
+      console.error('Error setting auth persistence:', error);
+    });
+  }
+  return auth;
 }
+
+// Initialize Auth immediately
+auth = getFirebaseAuth();
 
 // Initialize Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();
@@ -20,3 +23,4 @@ googleProvider.setCustomParameters({
 });
 
 export { auth };
+export { getAuth };
