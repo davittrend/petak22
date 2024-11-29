@@ -1,4 +1,10 @@
-export * from './errors';
-export * from './accounts';
-export * from './boards';
-export * from './pins';
+import { app } from './init';
+import { auth, googleProvider } from './auth';
+import { database } from './database';
+
+export {
+  app,
+  auth,
+  googleProvider,
+  database,
+};
