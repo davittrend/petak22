@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { getPinterestAuthUrl, fetchPinterestBoards } from '@/lib/pinterest';
 import { useAccountStore } from '@/lib/store';
 import { toast } from 'sonner';
 import { Trash2, RefreshCw } from 'lucide-react';
+import useAuth from '../hooks/useAuth';
 
 export function Accounts() {
   const [isConnecting, setIsConnecting] = useState(false);
@@ -16,6 +18,7 @@ export function Accounts() {
     removeAccount: state.removeAccount,
     setSelectedAccount: state.setSelectedAccount,
     setBoards: state.setBoards,
+    setAccounts: state.setAccounts,
   }), (prev, next) => {
     // Log state changes
     console.log('Store state changed:', {
@@ -75,6 +78,22 @@ export function Accounts() {
       setIsRefreshing(false);
     }
   };
+
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      const fetchAccounts = async () => {
+        try {
+          const accounts = await fetch('/api/pinterest-accounts');
+          await store.setAccounts(accounts);
+        } catch (error) {
+          console.error('Error fetching accounts:', error);
+        }
+      };
+      fetchAccounts();
+    }
+  }, [user, store]);
 
   // Debug function to check store state
   const debugStoreState = () => {
@@ -165,50 +184,4 @@ export function Accounts() {
             </div>
           </div>
 
-          {store.selectedAccountId && store.boards?.[store.selectedAccountId] && (
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b">
-                <h2 className="text-lg font-medium">
-                  Boards ({store.boards[store.selectedAccountId].length})
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-                {store.boards[store.selectedAccountId].map((board) => (
-                  <div key={board.id} className="border rounded-lg p-4 space-y-2">
-                    <div className="flex items-center space-x-3">
-                      {board.image_thumbnail_url && (
-                        <img
-                          src={board.image_thumbnail_url}
-                          alt={board.name}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
-                      )}
-                      <div>
-                        <h3 className="font-medium">{board.name}</h3>
-                        {board.description && (
-                          <p className="text-sm text-gray-500 line-clamp-2">
-                            {board.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      Privacy: {board.privacy}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-center text-gray-500">
-            No Pinterest accounts connected yet.
-            Connect your first account to get started!
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+          {store.selectedAccountId && store.boards?.[store.selectedAccountId
