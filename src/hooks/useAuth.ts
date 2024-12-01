@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAccountStore } from '@/lib/store';
