@@ -12,13 +12,14 @@ export function useAuth() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       console.log('Auth state changed:', currentUser?.uid); // Debug log
-      
+
       try {
         if (currentUser) {
           await initializeStore(currentUser.uid);
+          setUser(currentUser);
+        } else {
+          setUser(null); // Ensure user is null if logged out
         }
-        
-        setUser(currentUser);
       } catch (error) {
         console.error('Error initializing store:', error);
       } finally {
@@ -27,15 +28,21 @@ export function useAuth() {
       }
     });
 
-    // Handle initial auth state
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      console.log('Initial auth state:', currentUser.uid); // Debug log
-      initializeStore(currentUser.uid);
-    }
-
+    // Cleanup on component unmount
     return () => unsubscribe();
   }, [initializeStore]);
+
+  // Ensure we initialize the store with the current user on initial load
+  useEffect(() => {
+    const currentUser = auth.currentUser;
+    if (currentUser && !authInitialized) {
+      console.log('Initial auth state:', currentUser.uid); // Debug log
+      initializeStore(currentUser.uid);
+      setUser(currentUser);
+      setLoading(false);
+      setAuthInitialized(true);
+    }
+  }, [authInitialized, initializeStore]);
 
   return { 
     user, 
