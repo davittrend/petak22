@@ -1,26 +1,49 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState,// Add useEffect
+import { useNavigate, useLocation } from 'react-router-dom';  // Add useLocation
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/Button';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { useAuth } from '@/hooks/useAuth';  // Add this import
 
 export function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();  // Add this
+  const { user, loading } = useAuth();  // Add this
+
+  // Add this useEffect to handle Pinterest callback
+  useEffect(() => {
+    if (loading) return;
+
+    if (user) {
+      // Check if we have a stored Pinterest code
+      const pinterestCode = sessionStorage.getItem('pinterest_callback_code');
+      if (pinterestCode) {
+        navigate('/callback');
+        return;
+      }
+
+      // Get return path from location state or default to dashboard
+      const returnTo = location.state?.returnTo || '/dashboard';
+      navigate(returnTo);
+    }
+  }, [user, loading, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/dashboard');
+      // Remove the navigate call here as it's handled in the useEffect
     } catch (err) {
       setError('Failed to sign in');
+      console.error('Sign in error:', err);  // Add error logging
     }
   };
 
+  // Rest of your component remains the same
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
