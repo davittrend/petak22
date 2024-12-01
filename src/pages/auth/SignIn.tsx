@@ -1,4 +1,4 @@
-import { from 'react';  // Correct React imports
+import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -14,9 +14,7 @@ export function SignIn() {
   const location = useLocation();
   const { user, loading } = useAuth();
 
-  // Handle Pinterest OAuth callback
   useEffect(() => {
-    // Don't do anything while auth is loading
     if (loading) return;
 
     if (user) {
