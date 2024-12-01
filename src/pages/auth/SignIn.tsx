@@ -1,3 +1,4 @@
+import { from 'react';  // Correct React imports
 import { useNavigate, useLocation } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -13,7 +14,9 @@ export function SignIn() {
   const location = useLocation();
   const { user, loading } = useAuth();
 
+  // Handle Pinterest OAuth callback
   useEffect(() => {
+    // Don't do anything while auth is loading
     if (loading) return;
 
     if (user) {
@@ -40,6 +43,15 @@ export function SignIn() {
       console.error('Sign in error:', err);
     }
   };
+
+  // Show loading state while auth is initializing
+  if (loading) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
