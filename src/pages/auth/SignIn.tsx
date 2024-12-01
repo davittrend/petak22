@@ -1,20 +1,18 @@
-import { useState,// Add useEffect
-import { useNavigate, useLocation } from 'react-router-dom';  // Add useLocation
+import { useState, useEffect }ate, useLocation } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/Button';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
-import { useAuth } from '@/hooks/useAuth';  // Add this import
+import { useAuth } from '@/hooks/useAuth';
 
 export function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const location = useLocation();  // Add this
-  const { user, loading } = useAuth();  // Add this
+  const location = useLocation();
+  const { user, loading } = useAuth();
 
-  // Add this useEffect to handle Pinterest callback
   useEffect(() => {
     if (loading) return;
 
@@ -36,14 +34,13 @@ export function SignIn() {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Remove the navigate call here as it's handled in the useEffect
+      // Navigation is handled in useEffect
     } catch (err) {
       setError('Failed to sign in');
-      console.error('Sign in error:', err);  // Add error logging
+      console.error('Sign in error:', err);
     }
   };
 
-  // Rest of your component remains the same
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
